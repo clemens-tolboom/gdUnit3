@@ -1,13 +1,17 @@
 class_name GdUnitRunnerConfig
 extends Resource
 
+const CONFIG_VERSION = "1.0"
+const VERSION = "version"
 const INCLUDED = "included"
-const EXCLUDED = "ignored"
+const EXCLUDED = "excluded"
 const SERVER_PORT = "server_port"
 const EXIT_FAIL_FAST ="exit_on_first_fail"
+
 const CONFIG_FILE = "res://GdUnitRunner.cfg"
 
 var _config := {
+		VERSION : CONFIG_VERSION,
 		# a set of directories or testsuite paths as key and a optional set of testcases as values
 		INCLUDED :  Dictionary(),
 		# a set of excluded directories or testsuite paths
@@ -63,6 +67,7 @@ func ignore_test_case(resource_path :String, test_name :String) -> GdUnitRunnerC
 func to_execute() -> Dictionary:
 	return _config.get(INCLUDED, {"res://" : []})
 
+
 func to_ignore() -> Dictionary:
 	return _config.get(EXCLUDED, [])
 
@@ -71,20 +76,23 @@ func save(path :String = CONFIG_FILE) -> Result:
 	var err := file.open(path, File.WRITE)
 	if err != OK:
 		return Result.error("Can't write test runner configuration '%s'! %s" % [path, GdUnitTools.error_as_string(err)])
+	_config[VERSION] = CONFIG_VERSION
 	file.store_var(_config)
 	file.close()
 	return Result.success(path)
 
 func load(path :String = CONFIG_FILE) -> Result:
+	if not Directory.new().file_exists(path):
+		return Result.error("Can't find test runner configuration '%s'! Please select a test to run." % path)
+		
 	var file := File.new()
 	var err := file.open(path, File.READ)
-	match err:
-		OK:
-			pass
-		ERR_FILE_NOT_FOUND:
-			return Result.error("Can't find test runner configuration '%s'! Please select a test to run." % path)
-		_:
-			return Result.error("Can't load test runner configuration '%s'! ERROR: %s." % [path, GdUnitTools.error_as_string(err)])
+	if err != OK:
+		return Result.error("Can't load test runner configuration '%s'! ERROR: %s." % [path, GdUnitTools.error_as_string(err)])
+
 	_config = file.get_var() as Dictionary
+	# if old file format than convert into new format
+	if not _config.has(VERSION):
+		return Result.error("The runner configuration '%s' is invalid! The format is changed please delete it manually and start a new test run." % path)
 	file.close()
 	return Result.success(path)

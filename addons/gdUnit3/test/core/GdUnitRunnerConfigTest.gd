@@ -154,3 +154,8 @@ func test_save_load():
 	assert_result(config2.load(config_file)).is_success()
 	# verify the config has original enties
 	assert_object(config2).is_equal(config).is_not_same(config)
+
+func test_load_old_format():
+	assert_result(GdUnitRunnerConfig.new().load("res://addons/gdUnit3/test/core/resources/GdUnitRunner_old_format.cfg"))\
+		.is_error()\
+		.contains_message("The runner configuration 'res://addons/gdUnit3/test/core/resources/GdUnitRunner_old_format.cfg' is invalid! The format is changed please delete it manually and start a new test run.")
