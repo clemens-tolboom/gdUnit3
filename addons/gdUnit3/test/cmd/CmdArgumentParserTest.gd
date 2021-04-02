@@ -29,21 +29,16 @@ func before():
 
 func test_parse_success():
 	var parser := CmdArgumentParser.new(_cmd_options, "CmdTool.gd")
-	# show help as default if not arguments set
-	assert_bool(parser._show_help).is_true()
 	assert_array(parser.commands()).is_empty()
 	
 	assert_int(parser.parse([])).is_zero()
-	assert_bool(parser._show_help).is_true()
 	assert_array(parser.commands()).is_empty()
 	
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd"])).is_zero()
-	assert_bool(parser._show_help).is_true()
 	assert_array(parser.commands()).is_empty()
 	
 	# if valid argument set than don't show the help by default
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-a"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-a"),
 	])
@@ -52,7 +47,6 @@ func test_parse_success_required_arg():
 	var parser := CmdArgumentParser.new(_cmd_options, "CmdTool.gd")
 
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-a", "-b", "value"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-a"),
 		CmdCommand.new("-b", ["value"])
@@ -60,7 +54,6 @@ func test_parse_success_required_arg():
 	
 	# useing command long term
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-a", "--bar", "value"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-a"),
 		CmdCommand.new("-b", ["value"])
@@ -71,7 +64,6 @@ func test_parse_success_optional_arg():
 	
 	# without argument
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-c", "-a"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-c"),
 		CmdCommand.new("-a")
@@ -79,7 +71,6 @@ func test_parse_success_optional_arg():
 	
 	# without argument at end
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-a", "-c"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-a"),
 		CmdCommand.new("-c")
@@ -87,7 +78,6 @@ func test_parse_success_optional_arg():
 	
 	# with argument
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-c", "argument", "-a"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-c", ["argument"]),
 		CmdCommand.new("-a")
@@ -98,7 +88,6 @@ func test_parse_success_repead_cmd_args():
 	
 	# without argument
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-c", "argument", "-a"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-c", ["argument"]),
 		CmdCommand.new("-a")
@@ -106,7 +95,6 @@ func test_parse_success_repead_cmd_args():
 	
 	# with repeading commands argument
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-c", "argument1", "-a",  "-c", "argument2",  "-c", "argument3"])).is_zero()
-	assert_bool(parser._show_help).is_false()
 	assert_array(parser.commands()).contains_exactly([
 		CmdCommand.new("-c", ["argument1", "argument2", "argument3"]),
 		CmdCommand.new("-a")
@@ -115,15 +103,12 @@ func test_parse_success_repead_cmd_args():
 func test_parse_error():
 	var parser := CmdArgumentParser.new(_cmd_options, "CmdTool.gd")
 	# show help as default if not arguments set
-	assert_bool(parser._show_help).is_true()
 	assert_array(parser.commands()).is_empty()
 	
 	assert_int(parser.parse([])).is_zero()
-	assert_bool(parser._show_help).is_true()
 	assert_array(parser.commands()).is_empty()
 	
 	# if invalid arguemens set than return with error and show the help by default
 	assert_int(parser.parse(["-d", "dir/dir/CmdTool.gd", "-unknown"])).is_equal(-1)
-	assert_bool(parser._show_help).is_true()
 	assert_array(parser.commands()).is_empty()
 

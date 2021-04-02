@@ -31,13 +31,12 @@ func get_option(cmd :String) -> CmdOption:
 func is_help(option :CmdOption) -> bool:
 	return option == OPTION_HELP or option == OPTION_ADVANCES_HELP
 
-func print_options(option :CmdOption = OPTION_HELP):
-	prints("Usage: gdUnit -sd <directory> [-sd <directory>]... [-e <suite-name>]")
+func print_options(show_advanced :bool = false):
 	prints("----------------------------------------------------------------------------------------------")
 	for option in default_options():
 		prints(option.describe())
 	# print advance options
-	prints("-- Advanced options --------------------------------------------------------------------------")
-	if option == OPTION_ADVANCES_HELP:
+	if show_advanced:
+		prints("-- Advanced options --------------------------------------------------------------------------")
 		for option in advanced_options():
 			prints(option.describe())

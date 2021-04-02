@@ -4,7 +4,6 @@ extends Reference
 var _options :CmdOptions
 var _tool_name :String
 var _parsed_commands :Dictionary = Dictionary()
-var _show_help := true
 
 func _init(options :CmdOptions, tool_name :String):
 	_options = options
@@ -12,7 +11,6 @@ func _init(options :CmdOptions, tool_name :String):
 
 func parse(args :Array) -> int:
 	_parsed_commands.clear()
-	_show_help = true
 	
 	# parse until first program argument
 	while not args.empty():
@@ -21,19 +19,13 @@ func parse(args :Array) -> int:
 			args.pop_front()
 			break
 	
-	# if no arguments found show help by default
 	if args.empty():
-		_show_help = true
-		_options.print_options()
 		return 0
 	
 	# now parse all arguments
 	while not args.empty():
 		var cmd :String = args.pop_front()
 		var option := _options.get_option(cmd)
-		if _options.is_help(option):
-			_options.print_options(option)
-			return 0
 		
 		if option:
 			if _parse_cmd_arguments(option, args) == -1:
@@ -43,7 +35,6 @@ func parse(args :Array) -> int:
 		else:
 			GdUnitTools.prints_error("Unknown '%s' command!" % cmd)
 			return -1
-	_show_help = false
 	return 0
 
 func commands() -> Array:

@@ -17,6 +17,19 @@ class CLIRunner extends Node:
 	var _report :GdUnitHtmlReport
 	var _runner_config := GdUnitRunnerConfig.new()
 	
+	var _cmd_options: = CmdOptions.new([
+			CmdOption.new("-add, --add-suite, --add-directory", "--add <suite-name|directory>", "Adds the given test suite or directory to the execution pipeline.", TYPE_STRING),
+			CmdOption.new("-ignore, --ignore-suite", "-ignore <suite-name|suite-name:test-name>", "Adds the given test suite or test case to the ignore list.", TYPE_STRING),
+			CmdOption.new("-c, --continue", "", "By default GdUnit will abort on first test failure to be fail fast, instead of stop after first failure you can use this option to run the complete test set."),
+			CmdOption.new("-wr, --write-report", "-wr [report directory]", "Writes an HTML report to the specified directory. If no directory is specified, the project root directory is used as the default location.", TYPE_STRING, true)
+		], [
+			# advanced options
+			CmdOption.new("--list-suites", "--list-suites [directory]", "Lists all test suites located in the given directory.", TYPE_STRING),
+			CmdOption.new("--describe-suite", "--describe-suite <suite name>", "Shows the description of selected test suite.", TYPE_STRING),
+			CmdOption.new("--info", "", "Shows the GdUnit version info"),
+			CmdOption.new("--selftest", "", "Runs the GdUnit self test"),
+		])
+	
 	func _init():
 		_state = INIT
 		_signal_handler = GdUnitSingleton.get_or_create_singleton(SignalHandler.SINGLETON_NAME, "res://addons/gdUnit3/src/core/event/SignalHandler.gd")
@@ -69,29 +82,34 @@ class CLIRunner extends Node:
 		#warning-ignore:return_value_discarded
 		_runner_config.self_test()
 	
+	func show_help() -> void:
+		prints("Usage: gdUnit -add <directory> [-add <directory>]... [-add <suite-name>]")
+		_cmd_options.print_options()
+		get_tree().quit(0)
+
+	func show_advanced_help() -> void:
+		prints("Usage: gdUnit -add <directory> [-add <directory>]... [-add <suite-name>]")
+		_cmd_options.print_options(true)
+		get_tree().quit(0)
+	
 	func gdUnitInit() -> void:
 		prints("-- GdUnit3 Comandline Tool -----")
-		var options: = CmdOptions.new([
-			CmdOption.new("-add, --add-suite, --add-directory", "--add <suite-name|directory>", "Adds the given test suite or directory to the execution pipeline.", TYPE_STRING),
-			CmdOption.new("-ignore, --ignore-suite", "-ignore <suite-name|suite-name:test-name>", "Adds the given test suite or test case to the ignore list.", TYPE_STRING),
-			CmdOption.new("-c, --continue", "", "By default GdUnit will abort on first test failure to be fail fast, instead of stop after first failure you can use this option to run the complete test set."),
-			CmdOption.new("-wr, --write-report", "-wr [report directory]", "Writes an HTML report to the specified directory. If no directory is specified, the project root directory is used as the default location.", TYPE_STRING, true)
-		], [
-			# advanced options
-			CmdOption.new("--list-suites", "--list-suites [directory]", "Lists all test suites located in the given directory.", TYPE_STRING),
-			CmdOption.new("--describe-suite", "--describe-suite <suite name>", "Shows the description of selected test suite.", TYPE_STRING),
-			CmdOption.new("--info", "", "Shows the GdUnit version info"),
-			CmdOption.new("--selftest", "", "Runs the GdUnit self test"),
-		])
-		var cmd_parser := CmdArgumentParser.new(options, "GdUnitCmdTool.gd")
+
+		var cmd_parser := CmdArgumentParser.new(_cmd_options, "GdUnitCmdTool.gd")
 		if cmd_parser.parse(OS.get_cmdline_args()) != 0:
-			options.print_options()
+			_cmd_options.print_options()
 			GdUnitTools.prints_error("Abnormal exit with -1")
 			get_tree().quit(-1)
 			return
 		
+		if cmd_parser.commands().empty():
+			show_help()
+			return
+		
 		# build runner config by given commands
-		var result := CmdCommandHandler.new(options)\
+		var result := CmdCommandHandler.new(_cmd_options)\
+			.register_cb("-?", funcref(self, "show_help"))\
+			.register_cb("--?", funcref(self, "show_advanced_help"))\
 			.register_cb("-add", funcref(_runner_config, "add_test_suite"))\
 			.register_cbv("-add", funcref(_runner_config, "add_test_suites"))\
 			.register_cb("--selftest", funcref(self, "run_self_test"))\
@@ -102,7 +120,10 @@ class CLIRunner extends Node:
 			GdUnitTools.prints_error(result.error_message())
 			_state = STOP
 			get_tree().quit(0)
-			
+		
+		# wait comamnd handler is finish, e.g. exit program on show help
+		yield(get_tree(), "idle_frame")
+		
 		_test_suites_to_process = load_testsuites(_runner_config)
 		var total_test_count = _collect_test_case_count(_test_suites_to_process)
 		prints("total_test_count", total_test_count)
