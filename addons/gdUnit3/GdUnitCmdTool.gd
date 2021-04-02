@@ -55,8 +55,10 @@ class CLIRunner extends Node:
 				get_tree().quit(report_exit_code(_report))
 	
 	func print_version() -> void:
-		prints(Engine.get_version_info())
-		prints("GdUnit3 v0.9.0 - beta")
+		prints("Godot %s" % Engine.get_version_info().get("string"))
+		var config = ConfigFile.new()
+		config.load('addons/gdUnit3/plugin.cfg')
+		prints("GdUnit3 %s" % config.get_value('plugin', 'version'))
 		get_tree().quit(0)
 	
 	func disable_fail_fast() -> void:
@@ -64,6 +66,7 @@ class CLIRunner extends Node:
 	
 	func run_self_test() -> void:
 		disable_fail_fast()
+		#warning-ignore:return_value_discarded
 		_runner_config.self_test()
 	
 	func gdUnitInit() -> void:
